@@ -904,9 +904,19 @@ func (container *Container) Copy(resource string) (io.ReadCloser, error) {
 	}
 
 	// Check if this is actually in a volume
-	for _, mnt := range container.VolumeMounts() {
-		if len(mnt.MountToPath) > 0 && strings.HasPrefix(resource, mnt.MountToPath[1:]) {
-			return mnt.Export(resource)
+	for _, mnt := range container.volumeMounts() {
+		if len(mnt.toPath) > 0 && strings.HasPrefix(resource, mnt.toPath[1:]) {
+			if v := container.daemon.volumes.Get(mnt.fromPath); v != nil {
+				var name string
+				if resource == mnt.toPath[1:] {
+					name = filepath.Base(resource)
+				}
+				path, err := filepath.Rel(mnt.toPath[1:], resource)
+				if err != nil {
+					return nil, err
+				}
+				return v.Export(path, name)
+			}
 		}
 	}
 
