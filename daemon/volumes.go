@@ -114,7 +114,7 @@ func (container *Container) createVolumes() error {
 		}
 
 		// Create the actual volume
-		v, err := container.daemon.volumes.FindOrCreateVolume(mnt.fromPath, mnt.writable)
+		v, err := container.daemon.volumes.FindOrCreateVolume(mnt.fromPath, container.ID, mnt.writable)
 		if err != nil {
 			return err
 		}
@@ -166,7 +166,7 @@ func (container *Container) registerVolumes() {
 		if rw, exists := container.VolumesRW[path]; exists {
 			writable = rw
 		}
-		v, err := container.daemon.volumes.FindOrCreateVolume(path, writable)
+		v, err := container.daemon.volumes.FindOrCreateVolume(path, container.ID, writable)
 		if err != nil {
 			log.Debugf("error registering volume %s: %v", path, err)
 			continue

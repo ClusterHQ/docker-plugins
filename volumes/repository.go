@@ -1,8 +1,11 @@
 package volumes
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
@@ -17,9 +20,10 @@ type Repository struct {
 	driver     graphdriver.Driver
 	volumes    map[string]*Volume
 	lock       sync.Mutex
+	extUrl     string
 }
 
-func NewRepository(configPath string, driver graphdriver.Driver) (*Repository, error) {
+func NewRepository(configPath string, driver graphdriver.Driver, extUrl string) (*Repository, error) {
 	abspath, err := filepath.Abs(configPath)
 	if err != nil {
 		return nil, err
@@ -34,6 +38,7 @@ func NewRepository(configPath string, driver graphdriver.Driver) (*Repository, e
 		driver:     driver,
 		configPath: abspath,
 		volumes:    make(map[string]*Volume),
+		extUrl:     extUrl,
 	}
 
 	return repo, repo.restore()
@@ -77,7 +82,8 @@ func (r *Repository) newVolume(path string, writable bool) (*Volume, error) {
 		return nil, err
 	}
 
-	return v, r.add(v)
+	r.add(v)
+	return v, nil
 }
 
 func (r *Repository) restore() error {
@@ -103,9 +109,7 @@ func (r *Repository) restore() error {
 				continue
 			}
 		}
-		if err := r.add(vol); err != nil {
-			log.Debugf("Error restoring volume: %v", err)
-		}
+		r.add(vol)
 	}
 	return nil
 }
@@ -125,12 +129,13 @@ func (r *Repository) get(path string) *Volume {
 	return r.volumes[filepath.Clean(path)]
 }
 
-func (r *Repository) add(volume *Volume) error {
+func (r *Repository) add(volume *Volume) {
 	if vol := r.get(volume.Path); vol != nil {
-		return fmt.Errorf("Volume exists: %s", volume.ID)
+		log.Debugf("Volume exists: %s", volume.ID)
+		return
 	}
 	r.volumes[volume.Path] = volume
-	return nil
+	return
 }
 
 func (r *Repository) Delete(path string) error {
@@ -179,9 +184,53 @@ func (r *Repository) createNewVolumePath(id string) (string, error) {
 	return path, nil
 }
 
-func (r *Repository) FindOrCreateVolume(path string, writable bool) (*Volume, error) {
+type VolumeExtensionReq struct {
+	DockerVolumesExtensionVersion int
+	HostPath                      string
+	ContainerID                   string
+}
+
+type VolumeExtensionResp struct {
+	ModifiedHostPath              string
+	DockerVolumesExtensionVersion int
+}
+
+func (r *Repository) FindOrCreateVolume(path, containerId string, writable bool) (*Volume, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
+
+	// Call extension
+	if r.extUrl != "" {
+		data := VolumeExtensionReq{
+			DockerVolumesExtensionVersion: 1,
+			HostPath:                      path,
+			ContainerID:                   containerId,
+		}
+
+		b, err := json.Marshal(data)
+		if err != nil {
+			return nil, err
+		}
+
+		log.Debugf("sending request for volume extension:\n%s", string(b))
+		resp, err := http.Post(r.extUrl, "application/json", bytes.NewBuffer(b))
+		if err != nil {
+			return nil, fmt.Errorf("got error calling volume extension: %v", err)
+		}
+		defer resp.Body.Close()
+
+		var extResp VolumeExtensionResp
+		log.Debugf("decoding volume extension response")
+		if err := json.NewDecoder(resp.Body).Decode(&extResp); err != nil {
+			return nil, err
+		}
+
+		// Use the path provided by the extension instead of creating one
+		if extResp.ModifiedHostPath != "" {
+			log.Debugf("using modified host path for volume extension")
+			return r.newVolume(extResp.ModifiedHostPath, writable)
+		}
+	}
 
 	if path == "" {
 		return r.newVolume(path, writable)
