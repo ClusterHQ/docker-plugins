@@ -40,6 +40,7 @@ import (
 	"github.com/docker/docker/pkg/parsers/kernel"
 	"github.com/docker/docker/pkg/sysinfo"
 	"github.com/docker/docker/pkg/truncindex"
+	"github.com/docker/docker/plugins"
 	"github.com/docker/docker/runconfig"
 	"github.com/docker/docker/trust"
 	"github.com/docker/docker/utils"
@@ -106,6 +107,7 @@ type Daemon struct {
 	execDriver     execdriver.Driver
 	trustStore     *trust.TrustStore
 	statsCollector *statsCollector
+	plugins        *plugins.Repository
 }
 
 // Install installs daemon capabilities to eng.
@@ -342,6 +344,7 @@ func (daemon *Daemon) restore() error {
 		return err
 	}
 
+	// TODO: sort out plugins from normal containers and load plugins first
 	for _, v := range dir {
 		id := v.Name()
 		container, err := daemon.load(id)
@@ -999,6 +1002,7 @@ func NewDaemonFromDirectory(config *Config, eng *engine.Engine) (*Daemon, error)
 		eng:            eng,
 		trustStore:     t,
 		statsCollector: newStatsCollector(1 * time.Second),
+		plugins:        plugins.NewRepository(),
 	}
 	if err := daemon.restore(); err != nil {
 		return nil, err

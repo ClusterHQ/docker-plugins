@@ -267,6 +267,20 @@ func (container *Container) setupMounts() error {
 		mounts = append(mounts, execdriver.Mount{Source: container.HostsPath, Destination: "/etc/hosts", Writable: true, Private: true})
 	}
 
+	if container.hostConfig.Plugin {
+		// We are going to create this socket then close/unlink it so it can be
+		// bind-mounted into the container and used by the plugin process.
+		socketPath, err := container.getPluginSocketPath()
+		if err != nil {
+			return err
+		}
+		pluginDir := filepath.Dir(socketPath)
+		if err := os.MkdirAll(pluginDir, 0700); err != nil {
+			return err
+		}
+		mounts = append(mounts, execdriver.Mount{Source: pluginDir, Destination: "/var/run/docker-plugin", Writable: true, Private: true})
+	}
+
 	for _, m := range mounts {
 		if err := label.SetFileLabel(m.Source, container.MountLabel); err != nil {
 			return err
