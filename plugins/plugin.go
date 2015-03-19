@@ -18,7 +18,7 @@ type handshakeResp struct {
 	Website      string
 }
 
-func (p *Plugin) call(method, path string, data interface{}) (io.ReadCloser, error) {
+func (p *Plugin) Call(method, path string, data interface{}) (io.ReadCloser, error) {
 	path = "/" + p.kind + "/" + path
 	return call(p.addr, method, path, data)
 }

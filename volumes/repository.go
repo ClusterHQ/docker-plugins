@@ -5,17 +5,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/docker/daemon"
 	"github.com/docker/docker/daemon/graphdriver"
 	"github.com/docker/docker/pkg/common"
 )
 
 type Repository struct {
+	daemon     *daemon.Daemon
 	configPath string
 	driver     graphdriver.Driver
 	volumes    map[string]*Volume
@@ -23,7 +24,7 @@ type Repository struct {
 	extUrl     string
 }
 
-func NewRepository(configPath string, driver graphdriver.Driver, extUrl string) (*Repository, error) {
+func NewRepository(daemon *daemon.Daemon, configPath string, driver graphdriver.Driver, extUrl string) (*Repository, error) {
 	abspath, err := filepath.Abs(configPath)
 	if err != nil {
 		return nil, err
@@ -35,6 +36,7 @@ func NewRepository(configPath string, driver graphdriver.Driver, extUrl string) 
 	}
 
 	repo := &Repository{
+		daemon:     daemon,
 		driver:     driver,
 		configPath: abspath,
 		volumes:    make(map[string]*Volume),
@@ -199,12 +201,12 @@ func (r *Repository) FindOrCreateVolume(path, containerId string, writable bool)
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	// Call extension
-	if r.extUrl != "" {
+	plugins := r.daemon.plugins.GetPlugins("volume")
+
+	for _, plugin := range plugins {
 		data := VolumeExtensionReq{
-			DockerVolumesExtensionVersion: 1,
-			HostPath:                      path,
-			ContainerID:                   containerId,
+			HostPath:    path,
+			ContainerID: containerId,
 		}
 
 		b, err := json.Marshal(data)
@@ -213,7 +215,7 @@ func (r *Repository) FindOrCreateVolume(path, containerId string, writable bool)
 		}
 
 		log.Debugf("sending request for volume extension:\n%s", string(b))
-		resp, err := http.Post(r.extUrl, "application/json", bytes.NewBuffer(b))
+		resp, err := plugin.Call("POST", "volumes", bytes.NewBuffer(b))
 		if err != nil {
 			return nil, fmt.Errorf("got error calling volume extension: %v", err)
 		}
@@ -228,9 +230,19 @@ func (r *Repository) FindOrCreateVolume(path, containerId string, writable bool)
 		// Use the path provided by the extension instead of creating one
 		if extResp.ModifiedHostPath != "" {
 			log.Debugf("using modified host path for volume extension")
-			return r.newVolume(extResp.ModifiedHostPath, writable)
+			path = extResp.ModifiedHostPath
+			//return r.newVolume(extResp.ModifiedHostPath, writable)
 		}
 	}
+
+	// path := x
+	// plugin a {HostPath: x} => {ModifiedHostPath: y}
+	// plugin b {HostPath: y} => {ModifiedHostPath: z}
+	// return z
+
+	// Call extension
+	//if r.extUrl != "" {
+	//}
 
 	if path == "" {
 		return r.newVolume(path, writable)
