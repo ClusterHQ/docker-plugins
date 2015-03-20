@@ -22,7 +22,7 @@ func (repository *Repository) GetPlugins(kind string) (Plugins, error) {
 }
 
 var supportedPluginTypes = map[string]struct{}{
-	"volume": struct{}{},
+	"volume": {},
 }
 
 func NewRepository() *Repository {
