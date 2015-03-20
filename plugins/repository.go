@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-const ErrNotRegistered = errors.New("plugin type is not registered")
+var ErrNotRegistered = errors.New("plugin type is not registered")
 
 type Repository struct {
 	plugins map[string]Plugins
@@ -27,7 +27,7 @@ var supportedPluginTypes = map[string]struct{}{
 
 func NewRepository() *Repository {
 	return &Repository{
-		plugins: make(map[string][]*Plugin),
+		plugins: make(map[string][]Plugins),
 	}
 }
 
