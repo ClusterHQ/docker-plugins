@@ -10,9 +10,9 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/cpuguy83/docker/plugins"
 	"github.com/docker/docker/daemon/graphdriver"
 	"github.com/docker/docker/pkg/common"
+	"github.com/milosgajdos83/docker/plugins"
 )
 
 type Repository struct {
