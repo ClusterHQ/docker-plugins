@@ -1002,7 +1002,7 @@ func NewDaemonFromDirectory(config *Config, eng *engine.Engine) (*Daemon, error)
 		eng:            eng,
 		trustStore:     t,
 		statsCollector: newStatsCollector(1 * time.Second),
-		plugins:        pluginRepository
+		plugins:        pluginRepository,
 	}
 	if err := daemon.restore(); err != nil {
 		return nil, err

@@ -27,7 +27,7 @@ var supportedPluginTypes = map[string]struct{}{
 
 func NewRepository() *Repository {
 	return &Repository{
-		plugins: make(map[string][]Plugins),
+		plugins: make(map[string]Plugins),
 	}
 }
 

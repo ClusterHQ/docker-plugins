@@ -198,7 +198,10 @@ func (r *Repository) FindOrCreateVolume(path, containerId string, writable bool)
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	plugins := r.pluginRepository.GetPlugins("volume")
+	plugins, err := r.pluginRepository.GetPlugins("volume")
+	if err != nil {
+		return nil, err
+	}
 
 	for _, plugin := range plugins {
 		data := VolumeExtensionReq{
@@ -216,11 +219,11 @@ func (r *Repository) FindOrCreateVolume(path, containerId string, writable bool)
 		if err != nil {
 			return nil, fmt.Errorf("got error calling volume extension: %v", err)
 		}
-		defer resp.Body.Close()
+		defer resp.Close()
 
 		var extResp VolumeExtensionResp
 		log.Debugf("decoding volume extension response")
-		if err := json.NewDecoder(resp.Body).Decode(&extResp); err != nil {
+		if err := json.NewDecoder(resp).Decode(&extResp); err != nil {
 			return nil, err
 		}
 
