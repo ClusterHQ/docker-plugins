@@ -10,21 +10,20 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/docker/daemon"
+	"github.com/cpuguy83/docker/plugins"
 	"github.com/docker/docker/daemon/graphdriver"
 	"github.com/docker/docker/pkg/common"
 )
 
 type Repository struct {
-	daemon     *daemon.Daemon
-	configPath string
-	driver     graphdriver.Driver
-	volumes    map[string]*Volume
-	lock       sync.Mutex
-	extUrl     string
+	pluginRepository *plugins.Repository
+	configPath       string
+	driver           graphdriver.Driver
+	volumes          map[string]*Volume
+	lock             sync.Mutex
 }
 
-func NewRepository(daemon *daemon.Daemon, configPath string, driver graphdriver.Driver, extUrl string) (*Repository, error) {
+func NewRepository(pluginReposistory *plugins.Repository, configPath string, driver graphdriver.Driver) (*Repository, error) {
 	abspath, err := filepath.Abs(configPath)
 	if err != nil {
 		return nil, err
@@ -36,11 +35,9 @@ func NewRepository(daemon *daemon.Daemon, configPath string, driver graphdriver.
 	}
 
 	repo := &Repository{
-		daemon:     daemon,
 		driver:     driver,
 		configPath: abspath,
 		volumes:    make(map[string]*Volume),
-		extUrl:     extUrl,
 	}
 
 	return repo, repo.restore()
@@ -201,7 +198,7 @@ func (r *Repository) FindOrCreateVolume(path, containerId string, writable bool)
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	plugins := r.daemon.plugins.GetPlugins("volume")
+	plugins := r.pluginRepository.GetPlugins("volume")
 
 	for _, plugin := range plugins {
 		data := VolumeExtensionReq{
@@ -231,18 +228,8 @@ func (r *Repository) FindOrCreateVolume(path, containerId string, writable bool)
 		if extResp.ModifiedHostPath != "" {
 			log.Debugf("using modified host path for volume extension")
 			path = extResp.ModifiedHostPath
-			//return r.newVolume(extResp.ModifiedHostPath, writable)
 		}
 	}
-
-	// path := x
-	// plugin a {HostPath: x} => {ModifiedHostPath: y}
-	// plugin b {HostPath: y} => {ModifiedHostPath: z}
-	// return z
-
-	// Call extension
-	//if r.extUrl != "" {
-	//}
 
 	if path == "" {
 		return r.newVolume(path, writable)

@@ -44,7 +44,6 @@ type Config struct {
 	Context                     map[string][]string
 	TrustKeyPath                string
 	Labels                      []string
-	VolumeExt                   string
 }
 
 // InstallFlags adds command-line options to the top-level flag parser for

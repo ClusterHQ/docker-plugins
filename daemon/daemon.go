@@ -907,8 +907,8 @@ func NewDaemonFromDirectory(config *Config, eng *engine.Engine) (*Daemon, error)
 	if err != nil {
 		return nil, err
 	}
-
-	volumes, err := volumes.NewRepository(daemon, filepath.Join(config.Root, "volumes"), volumesDriver, config.VolumeExt)
+	pluginRepository := plugins.NewRepository()
+	volumes, err := volumes.NewRepository(pluginRepository, filepath.Join(config.Root, "volumes"), volumesDriver)
 	if err != nil {
 		return nil, err
 	}
@@ -1002,7 +1002,7 @@ func NewDaemonFromDirectory(config *Config, eng *engine.Engine) (*Daemon, error)
 		eng:            eng,
 		trustStore:     t,
 		statsCollector: newStatsCollector(1 * time.Second),
-		plugins:        plugins.NewRepository(),
+		plugins:        pluginRepository
 	}
 	if err := daemon.restore(); err != nil {
 		return nil, err
