@@ -12,7 +12,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/daemon/graphdriver"
 	"github.com/docker/docker/pkg/common"
-	"github.com/milosgajdos83/docker/plugins"
+	"github.com/docker/docker/plugins"
 )
 
 type Repository struct {
