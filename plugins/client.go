@@ -43,6 +43,7 @@ func call(addr, method, path string, data interface{}) (io.ReadCloser, error) {
 	}
 
 	reqBody, err := marshallBody(data)
+	log.Debugf("sending request for extension:\n%s", string(reqBody))
 	if err != nil {
 		return nil, err
 	}

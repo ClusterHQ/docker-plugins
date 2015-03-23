@@ -1,7 +1,6 @@
 package volumes
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -185,14 +184,12 @@ func (r *Repository) createNewVolumePath(id string) (string, error) {
 }
 
 type VolumeExtensionReq struct {
-	DockerVolumesExtensionVersion int
-	HostPath                      string
-	ContainerID                   string
+	HostPath    string
+	ContainerID string
 }
 
 type VolumeExtensionResp struct {
-	ModifiedHostPath              string
-	DockerVolumesExtensionVersion int
+	ModifiedHostPath string
 }
 
 func (r *Repository) FindOrCreateVolume(path, containerId string, writable bool) (*Volume, error) {
@@ -210,13 +207,7 @@ func (r *Repository) FindOrCreateVolume(path, containerId string, writable bool)
 			ContainerID: containerId,
 		}
 
-		b, err := json.Marshal(data)
-		if err != nil {
-			return nil, err
-		}
-
-		log.Debugf("sending request for volume extension:\n%s", string(b))
-		resp, err := plugin.Call("POST", "volumes", bytes.NewBuffer(b))
+		resp, err := plugin.Call("POST", "volumes", data)
 		if err != nil {
 			return nil, fmt.Errorf("got error calling volume extension: %v", err)
 		}
