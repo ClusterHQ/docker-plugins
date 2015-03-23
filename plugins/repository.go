@@ -19,7 +19,7 @@ func (repository *Repository) GetPlugins(kind string) (Plugins, error) {
 	if !exists {
 		// If no plugins have been registered for this kind yet, that's
 		// OK. Just set and return an empty list.
-		repository.plugins[kind] := make([]*Plugin, 0)
+		repository.plugins[kind] = make([]*Plugin, 0)
 		return repository.plugins[kind], nil
 	}
 	return plugins, nil
