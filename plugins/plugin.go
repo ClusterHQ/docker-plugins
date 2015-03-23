@@ -19,7 +19,7 @@ type handshakeResp struct {
 }
 
 func (p *Plugin) Call(method, path string, data interface{}) (io.ReadCloser, error) {
-	path = "/" + p.kind + "/" + path
+	path = p.kind + "/" + path
 	return call(p.addr, method, path, data)
 }
 
