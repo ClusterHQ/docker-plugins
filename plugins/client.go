@@ -11,7 +11,6 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-
 	"github.com/docker/docker/pkg/ioutils"
 )
 
@@ -25,36 +24,20 @@ func connect(addr string) (*httputil.ClientConn, error) {
 	return httputil.NewClientConn(c, nil), nil
 }
 
-func marshallBody(data interface{}) (io.Reader, error) {
-	if data == nil {
-		return nil, nil
-	}
-
-	body, err := json.Marshal(data)
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes.NewBuffer(body), nil
-}
-
 func call(addr, method, path string, data interface{}) (io.ReadCloser, error) {
 	client, err := connect(addr)
 	if err != nil {
 		return nil, err
 	}
 
-	reqBody, err := marshallBody(data)
-
-	b = bytes.NewBuffer(reqBody)
-	log.Debugf("sending request for extension:\n%s", string(b))
+	reqBody, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
 
+	log.Debugf("sending request for extension:\n%s", string(reqBody))
 	path = "/" + pluginApiVersion + "/" + path
-
-	req, err := http.NewRequest(method, path, reqBody)
+	req, err := http.NewRequest(method, path, bytes.NewBuffer(reqBody))
 	if err != nil {
 		client.Close()
 		return nil, err
