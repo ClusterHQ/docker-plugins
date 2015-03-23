@@ -35,9 +35,10 @@ func NewRepository(pluginReposistory *plugins.Repository, configPath string, dri
 	}
 
 	repo := &Repository{
-		driver:     driver,
-		configPath: abspath,
-		volumes:    make(map[string]*Volume),
+		pluginRepository: pluginReposistory,
+		driver:           driver,
+		configPath:       abspath,
+		volumes:          make(map[string]*Volume),
 	}
 
 	return repo, repo.restore()
