@@ -1352,13 +1352,19 @@ func (container *Container) waitForPluginSock() error {
 	go func() {
 		log.Debugf("waiting for plugin socket at: %s", pluginSock)
 		for {
-			conn, err := net.DialTimeout("unix", pluginSock, 100*time.Millisecond)
+			addr, err := net.ResolveUnixAddr("unix", pluginSock)
+			if err != nil {
+				log.Debugf("bad addr: %s", err)
+			}
+			conn, err := net.DialUnix("unix", nil, addr)
 			// If the file doesn't exist yet, that's ok, maybe plugin hasn't created it yet
 			if err != nil {
 				select {
 				case <-chStop:
 					return
 				default:
+					log.Debugf("retrying. got: %s", err)
+					time.Sleep(time.Second)
 					continue
 				}
 			}
@@ -1373,7 +1379,7 @@ func (container *Container) waitForPluginSock() error {
 		// We can close this net.Conn since the plugin system will establish it's own connection
 		conn.Close()
 		return plugins.Repo.RegisterPlugin(pluginSock)
-	case <-time.After(30 * time.Second):
+	case <-time.After(5 * time.Second):
 		chStop <- struct{}{}
 		return fmt.Errorf("connection to plugin sock timed out")
 	}
@@ -1463,5 +1469,5 @@ func (container *Container) Stats() (*execdriver.ResourceStats, error) {
 }
 
 func (container *Container) getPluginSocketPath() (string, error) {
-	return container.getRootResourcePath(filepath.Join("p", "plugin.sock"))
+	return container.getRootResourcePath(filepath.Join("p", "p.s"))
 }

@@ -8,10 +8,16 @@ init() {
   cmd-export push
   cmd-export restore
   cmd-export backup
+  cmd-export install
 }
 
 build() {
   make BINDDIR=.
+}
+
+install() {
+  cp bundles/1.5.0-plugins/cross/darwin/amd64/docker-1.5.0-plugins \
+    ~/Projects/.bin/docker
 }
 
 push() {
@@ -19,7 +25,7 @@ push() {
     | boot2docker ssh "cat > docker"
   boot2docker ssh "
       chmod +x ./docker
-      mv ./docker /usr/local/bin/docker
+      sudo mv ./docker /usr/local/bin/docker
       sudo /etc/init.d/docker restart
   "
 }
