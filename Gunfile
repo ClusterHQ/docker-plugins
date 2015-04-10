@@ -1,0 +1,34 @@
+
+# temporary Gunfile for plugins development on OS X.
+# curious to use it yourself?
+#   https://github.com/gliderlabs/glidergun
+
+init() {
+  cmd-export build
+  cmd-export push
+  cmd-export restore
+  cmd-export backup
+}
+
+build() {
+  make BINDDIR=.
+}
+
+push() {
+  cat bundles/1.5.0-plugins/binary/docker-1.5.0-plugins \
+    | boot2docker ssh "cat > docker"
+  boot2docker ssh "
+      chmod +x ./docker
+      mv ./docker /usr/local/bin/docker
+      sudo /etc/init.d/docker restart
+  "
+}
+
+backup() {
+  boot2docker ssh "cp /usr/local/bin/docker /usr/local/bin/docker.backup"
+}
+
+restore() {
+  boot2docker ssh "cp /usr/local/bin/docker.backup /usr/local/bin/docker"
+  boot2docker ssh "sudo /etc/init.d/docker restart"
+}
