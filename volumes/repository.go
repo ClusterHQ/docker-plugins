@@ -1,6 +1,7 @@
 package volumes
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,8 +10,18 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/daemon/graphdriver"
+	"github.com/docker/docker/plugins"
 	"github.com/docker/docker/utils"
 )
+
+type VolumeExtensionReq struct {
+	HostPath    string
+	ContainerID string
+}
+
+type VolumeExtensionResp struct {
+	ModifiedHostPath string
+}
 
 type Repository struct {
 	configPath string
@@ -195,9 +206,39 @@ func (r *Repository) createNewVolumePath(id string) (string, error) {
 	return path, nil
 }
 
-func (r *Repository) FindOrCreateVolume(path string, writable bool) (*Volume, error) {
+func (r *Repository) FindOrCreateVolume(path, containerId string, writable bool) (*Volume, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
+
+	plugins, err := plugins.Repo.GetPlugins("volume")
+	if err != nil {
+		return nil, err
+	}
+
+	for _, plugin := range plugins {
+		data := VolumeExtensionReq{
+			HostPath:    path,
+			ContainerID: containerId,
+		}
+
+		resp, err := plugin.Call("POST", "volumes", data)
+		if err != nil {
+			return nil, fmt.Errorf("got error calling volume extension: %v", err)
+		}
+		defer resp.Close()
+
+		var extResp VolumeExtensionResp
+		log.Debugf("decoding volume extension response")
+		if err := json.NewDecoder(resp).Decode(&extResp); err != nil {
+			return nil, err
+		}
+
+		// Use the path provided by the extension instead of creating one
+		if extResp.ModifiedHostPath != "" {
+			log.Debugf("using modified host path for volume extension")
+			path = extResp.ModifiedHostPath
+		}
+	}
 
 	if path == "" {
 		return r.newVolume(path, writable)

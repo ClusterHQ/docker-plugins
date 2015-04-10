@@ -64,6 +64,7 @@ func Parse(cmd *flag.FlagSet, args []string) (*Config, *HostConfig, *flag.FlagSe
 		flIpcMode         = cmd.String([]string{"-ipc"}, "", "Default is to create a private IPC namespace (POSIX SysV IPC) for the container\n'container:<name|id>': reuses another container shared memory, semaphores and message queues\n'host': use the host shared memory,semaphores and message queues inside the container.  Note: the host mode gives the container full access to local shared memory and is therefore considered insecure.")
 		flRestartPolicy   = cmd.String([]string{"-restart"}, "", "Restart policy to apply when a container exits (no, on-failure[:max-retry], always)")
 		flReadonlyRootfs  = cmd.Bool([]string{"-read-only"}, false, "Mount the container's root filesystem as read only")
+		flPlugin          = cmd.Bool([]string{"-plugin"}, false, "Enable plugin mode!")
 	)
 
 	cmd.Var(&flAttach, []string{"a", "-attach"}, "Attach to STDIN, STDOUT or STDERR.")
@@ -314,6 +315,7 @@ func Parse(cmd *flag.FlagSet, args []string) (*Config, *HostConfig, *flag.FlagSe
 		RestartPolicy:   restartPolicy,
 		SecurityOpt:     flSecurityOpt.GetAll(),
 		ReadonlyRootfs:  *flReadonlyRootfs,
+		Plugin:          *flPlugin,
 	}
 
 	// When allocating stdin in attached mode, close stdin at client disconnect

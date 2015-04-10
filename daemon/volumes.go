@@ -130,7 +130,7 @@ func (container *Container) registerVolumes() {
 		if rw, exists := container.VolumesRW[path]; exists {
 			writable = rw
 		}
-		v, err := container.daemon.volumes.FindOrCreateVolume(path, writable)
+		v, err := container.daemon.volumes.FindOrCreateVolume(path, container.ID, writable)
 		if err != nil {
 			log.Debugf("error registering volume %s: %v", path, err)
 			continue
@@ -159,7 +159,7 @@ func (container *Container) parseVolumeMountConfig() (map[string]*Mount, error) 
 			return nil, err
 		}
 		// Check if a volume already exists for this and use it
-		vol, err := container.daemon.volumes.FindOrCreateVolume(path, writable)
+		vol, err := container.daemon.volumes.FindOrCreateVolume(path, container.ID, writable)
 		if err != nil {
 			return nil, err
 		}
@@ -184,7 +184,7 @@ func (container *Container) parseVolumeMountConfig() (map[string]*Mount, error) 
 			continue
 		}
 
-		vol, err := container.daemon.volumes.FindOrCreateVolume("", true)
+		vol, err := container.daemon.volumes.FindOrCreateVolume("", container.ID, true)
 		if err != nil {
 			return nil, err
 		}
@@ -316,6 +316,20 @@ func (container *Container) setupMounts() error {
 
 	if container.HostsPath != "" {
 		mounts = append(mounts, execdriver.Mount{Source: container.HostsPath, Destination: "/etc/hosts", Writable: true, Private: true})
+	}
+
+	if container.hostConfig.Plugin {
+		// We are going to create this socket then close/unlink it so it can be
+		// bind-mounted into the container and used by the plugin process.
+		socketPath, err := container.getPluginSocketPath()
+		if err != nil {
+			return err
+		}
+		pluginDir := filepath.Dir(socketPath)
+		if err := os.MkdirAll(pluginDir, 0700); err != nil {
+			return err
+		}
+		mounts = append(mounts, execdriver.Mount{Source: pluginDir, Destination: "/var/run/docker-plugin", Writable: true, Private: true})
 	}
 
 	for _, m := range mounts {
