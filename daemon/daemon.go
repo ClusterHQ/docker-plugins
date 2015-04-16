@@ -903,6 +903,8 @@ func NewDaemonFromDirectory(config *Config, eng *engine.Engine) (*Daemon, error)
 		return nil, err
 	}
 
+    // TODO - this is where volumes get distinguished from images... if we want
+    // to insert a volumes endpoint, we should do it here.
 	volumesDriver, err := graphdriver.GetDriver("vfs", config.Root, config.GraphOptions)
 	if err != nil {
 		return nil, err
