@@ -11,11 +11,7 @@ type Plugin struct {
 }
 
 type handshakeResp struct {
-	InterestedIn []string
-	Name         string
-	Author       string
-	Org          string
-	Website      string
+	Implements []string
 }
 
 func (p *Plugin) Call(method, path string, data interface{}) (io.ReadCloser, error) {
