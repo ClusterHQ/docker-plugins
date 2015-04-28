@@ -42,7 +42,7 @@ func (repository *Repository) RegisterPlugin(addr string) error {
 		return fmt.Errorf("error in plugin handshake: %v", err)
 	}
 
-	for _, interest := range resp.InterestedIn {
+	for _, interest := range resp.Implements {
 		if _, exists := supportedPluginTypes[interest]; !exists {
 			return fmt.Errorf("plugin type %s is not supported", interest)
 		}
