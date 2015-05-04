@@ -38,6 +38,12 @@ func NewRepository() *Repository {
 	}
 }
 
+func (repository *Repository) CountPlugins() int {
+	// TODO: expand this to include other supported types
+	plugins, _ := repository.GetPlugins("volume")
+	return len(plugins)
+}
+
 func (repository *Repository) RegisterPlugin(addr string) error {
 	plugin := &Plugin{addr: addr}
 	resp, err := plugin.handshake()
