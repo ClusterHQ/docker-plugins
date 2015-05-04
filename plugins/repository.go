@@ -40,7 +40,8 @@ func NewRepository() *Repository {
 
 func CountPlugins(repository *Repository) int {
 	// TODO: expand this to include other supported types
-	return len(repository.GetPlugins("volume"))
+	plugins, err := repository.GetPlugins("volume")
+	return len(plugins)
 }
 
 func (repository *Repository) RegisterPlugin(addr string) error {
