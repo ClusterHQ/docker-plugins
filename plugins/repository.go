@@ -38,9 +38,9 @@ func NewRepository() *Repository {
 	}
 }
 
-func CountPlugins(repository *Repository) int {
+func (repository *Repository) CountPlugins() int {
 	// TODO: expand this to include other supported types
-	plugins, err := repository.GetPlugins("volume")
+	plugins, _ := repository.GetPlugins("volume")
 	return len(plugins)
 }
 
