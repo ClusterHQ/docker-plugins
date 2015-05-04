@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/pkg/parsers/kernel"
 	"github.com/docker/docker/pkg/parsers/operatingsystem"
 	"github.com/docker/docker/pkg/system"
+	"github.com/docker/docker/plugins"
 	"github.com/docker/docker/registry"
 	"github.com/docker/docker/utils"
 )
@@ -67,6 +68,7 @@ func (daemon *Daemon) CmdInfo(job *engine.Job) engine.Status {
 	v := &engine.Env{}
 	v.SetJson("ID", daemon.ID)
 	v.SetInt("Containers", len(daemon.List()))
+	v.SetInt("Plugins", plugins.Repo.CountPlugins())
 	v.SetInt("Images", imgcount)
 	v.Set("Driver", daemon.GraphDriver().String())
 	v.SetJson("DriverStatus", daemon.GraphDriver().Status())
