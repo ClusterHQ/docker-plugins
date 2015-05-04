@@ -514,6 +514,9 @@ func (cli *DockerCli) CmdInfo(args ...string) error {
 	if remoteInfo.Exists("Images") {
 		fmt.Fprintf(cli.out, "Images: %d\n", remoteInfo.GetInt("Images"))
 	}
+	if remoteInfo.Exists("Plugins") {
+		fmt.Fprintf(cli.out, "Plugins: %d\n", remoteInfo.GetInt("Plugins"))
+	}
 	if remoteInfo.Exists("Driver") {
 		fmt.Fprintf(cli.out, "Storage Driver: %s\n", remoteInfo.Get("Driver"))
 	}
