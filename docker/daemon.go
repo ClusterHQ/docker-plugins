@@ -21,6 +21,7 @@ import (
 	"github.com/docker/docker/pkg/signal"
 	"github.com/docker/docker/pkg/system"
 	"github.com/docker/docker/pkg/timeutils"
+	"github.com/docker/docker/plugins"
 	"github.com/docker/docker/registry"
 )
 
@@ -122,6 +123,10 @@ func mainDaemon() {
 		"execdriver":  d.ExecutionDriver().Name(),
 		"graphdriver": d.GraphDriver().String(),
 	}).Info("Docker daemon")
+
+	if err := plugins.Register(); err != nil {
+		logrus.Error(err)
+	}
 
 	serverConfig := &apiserver.ServerConfig{
 		Logging:     true,
