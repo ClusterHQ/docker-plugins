@@ -3,7 +3,7 @@ package volume
 import "sync"
 
 // currently created by hand. generation tool would generate this like:
-// $ extpoint-gen volume/volume.go Driver > volume/extpoint.go
+// $ extpoint-gen Driver > volume/extpoint.go
 
 var Drivers = &driverExtpoint{extensions: make(map[string]Driver)}
 
