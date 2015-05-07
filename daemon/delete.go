@@ -71,7 +71,7 @@ func (daemon *Daemon) ContainerRm(name string, config *ContainerRmConfig) error 
 		container.LogEvent("destroy")
 		if config.RemoveVolume {
 			for _, v := range container.volumes {
-				daemon.volumeDriver.Remove(v)
+				daemon.removeVolume(v)
 			}
 		}
 	}
@@ -156,7 +156,9 @@ func (daemon *Daemon) commonRm(container *Container, forceRemove bool) (err erro
 
 func (daemon *Daemon) DeleteVolumes(c *Container) error {
 	for _, v := range c.volumes {
-		daemon.volumeDriver.Remove(v)
+		if err := daemon.removeVolume(v); err != nil {
+			return err
+		}
 	}
 	return nil
 }
