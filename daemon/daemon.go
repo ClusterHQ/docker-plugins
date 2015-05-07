@@ -847,6 +847,7 @@ func NewDaemon(config *Config, registryService *registry.Service) (daemon *Daemo
 	if err != nil {
 		return nil, err
 	}
+	volume.Drivers.Register(volumesDriver, volumesDriver.Name())
 
 	trustKey, err := api.LoadOrCreateTrustKey(config.TrustKeyPath)
 	if err != nil {

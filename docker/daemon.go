@@ -124,7 +124,7 @@ func mainDaemon() {
 		"graphdriver": d.GraphDriver().String(),
 	}).Info("Docker daemon")
 
-	if err := plugins.Register(); err != nil {
+	if err := plugins.Load(); err != nil {
 		logrus.Error(err)
 	}
 
