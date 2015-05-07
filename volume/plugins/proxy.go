@@ -5,45 +5,45 @@ import plug "github.com/docker/docker/plugins"
 // currently created by hand. generation tool would generate this like:
 // $ rpc-gen volume/plugins/api.go VolumeDriver > volume/plugins/proxy.go
 
-type VolumeDriverCreateArgs struct {
+type volumeDriverCreateArgs struct {
 	Name string
 }
 
-type VolumeDriverCreateReturn struct {
+type volumeDriverCreateReturn struct {
 	Err error
 }
 
-type VolumeDriverRemoveArgs struct {
+type volumeDriverRemoveArgs struct {
 	Name string
 }
 
-type VolumeDriverRemoveReturn struct {
+type volumeDriverRemoveReturn struct {
 	Err error
 }
 
-type VolumeDriverPathArgs struct {
+type volumeDriverPathArgs struct {
 	Name string
 }
 
-type VolumeDriverPathReturn struct {
+type volumeDriverPathReturn struct {
 	Mountpoint string
 	Err        error
 }
 
-type VolumeDriverMountArgs struct {
+type volumeDriverMountArgs struct {
 	Name string
 }
 
-type VolumeDriverMountReturn struct {
+type volumeDriverMountReturn struct {
 	Mountpoint string
 	Err        error
 }
 
-type VolumeDriverUnmountArgs struct {
+type volumeDriverUnmountArgs struct {
 	Name string
 }
 
-type VolumeDriverUnmountReturn struct {
+type volumeDriverUnmountReturn struct {
 	Err error
 }
 
@@ -52,8 +52,8 @@ type volumeDriverProxy struct {
 }
 
 func (pp *volumeDriverProxy) Create(name string) error {
-	args := VolumeDriverCreateArgs{name}
-	var ret VolumeDriverCreateReturn
+	args := volumeDriverCreateArgs{name}
+	var ret volumeDriverCreateReturn
 	err := pp.client.Call("VolumeDriver.Create", args, &ret)
 	if err != nil {
 		return err
@@ -62,8 +62,8 @@ func (pp *volumeDriverProxy) Create(name string) error {
 }
 
 func (pp *volumeDriverProxy) Remove(name string) error {
-	args := VolumeDriverRemoveArgs{name}
-	var ret VolumeDriverRemoveReturn
+	args := volumeDriverRemoveArgs{name}
+	var ret volumeDriverRemoveReturn
 	err := pp.client.Call("VolumeDriver.Remove", args, &ret)
 	if err != nil {
 		return err
@@ -72,17 +72,17 @@ func (pp *volumeDriverProxy) Remove(name string) error {
 }
 
 func (pp *volumeDriverProxy) Path(name string) (string, error) {
-	args := VolumeDriverPathArgs{name}
-	var ret VolumeDriverPathReturn
+	args := volumeDriverPathArgs{name}
+	var ret volumeDriverPathReturn
 	if err := pp.client.Call("VolumeDriver.Path", args, &ret); err != nil {
 		return "", err
 	}
 	return ret.Mountpoint, ret.Err
 }
 
-func (pp *volumeDriverProxy) Mount(name string) (mountpoint string, err error) {
-	args := VolumeDriverMountArgs{name}
-	var ret VolumeDriverMountReturn
+func (pp *volumeDriverProxy) Mount(name string) (string, error) {
+	args := volumeDriverMountArgs{name}
+	var ret volumeDriverMountReturn
 	if err = pp.client.Call("VolumeDriver.Mount", args, &ret); err != nil {
 		return "", err
 	}
@@ -90,8 +90,8 @@ func (pp *volumeDriverProxy) Mount(name string) (mountpoint string, err error) {
 }
 
 func (pp *volumeDriverProxy) Unmount(name string) error {
-	args := VolumeDriverUnmountArgs{name}
-	var ret VolumeDriverUnmountReturn
+	args := volumeDriverUnmountArgs{name}
+	var ret volumeDriverUnmountReturn
 	err := pp.client.Call("VolumeDriver.Unmount", args, &ret)
 	if err != nil {
 		return err
