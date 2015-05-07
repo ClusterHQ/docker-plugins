@@ -1,5 +1,7 @@
 package plugins
 
+import plug "github.com/docker/docker/plugins"
+
 // currently created by hand. generation tool would generate this like:
 // $ rpc-gen volume/plugins/api.go VolumeDriver > volume/plugins/proxy.go
 
@@ -17,6 +19,15 @@ type VolumeDriverRemoveArgs struct {
 
 type VolumeDriverRemoveReturn struct {
 	Err error
+}
+
+type VolumeDriverPathArgs struct {
+	Name string
+}
+
+type VolumeDriverPathReturn struct {
+	Mountpoint string
+	Err        error
 }
 
 type VolumeDriverMountArgs struct {
@@ -37,7 +48,7 @@ type VolumeDriverUnmountReturn struct {
 }
 
 type volumeDriverProxy struct {
-	client PluginClient
+	client *plug.Client
 }
 
 func (pp *volumeDriverProxy) Create(name string) error {
@@ -60,11 +71,19 @@ func (pp *volumeDriverProxy) Remove(name string) error {
 	return ret.Err
 }
 
+func (pp *volumeDriverProxy) Path(name string) (string, error) {
+	args := VolumeDriverPathArgs{name}
+	var ret VolumeDriverPathReturn
+	if err := pp.client.Call("VolumeDriver.Path", args, &ret); err != nil {
+		return "", err
+	}
+	return ret.Mountpoint, ret.Err
+}
+
 func (pp *volumeDriverProxy) Mount(name string) (mountpoint string, err error) {
 	args := VolumeDriverMountArgs{name}
 	var ret VolumeDriverMountReturn
-	err := pp.client.Call("VolumeDriver.Mount", args, &ret)
-	if err != nil {
+	if err = pp.client.Call("VolumeDriver.Mount", args, &ret); err != nil {
 		return "", err
 	}
 	return ret.Mountpoint, ret.Err
