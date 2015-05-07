@@ -7,8 +7,8 @@ import (
 
 func init() {
 	plugins.Handle("VolumeDriver", func(name string, client *plugins.Client) {
-		proxy := &volumeDriverProxy{name, client}
-		adapter := &volumeDriverAdapter{proxy}
+		proxy := &volumeDriverProxy{client}
+		adapter := &volumeDriverAdapter{name, proxy}
 		volume.Drivers.Register(adapter, name)
 	})
 }
