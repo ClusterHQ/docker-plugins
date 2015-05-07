@@ -109,7 +109,6 @@ type Daemon struct {
 	defaultLogConfig runconfig.LogConfig
 	RegistryService  *registry.Service
 	EventsService    *events.Events
-	volumeDriver     volume.Driver
 }
 
 // Get looks for a container using the provided information, which could be
@@ -207,8 +206,8 @@ func (daemon *Daemon) register(container *Container, updateSuffixarray bool) err
 	// we'll waste time if we update it for every container
 	daemon.idIndex.Add(container.ID)
 
-	for name := range container.VolumeConfig {
-		v, err := daemon.volumeDriver.Create(name)
+	for name, config := range container.VolumeConfig {
+		v, err := daemon.createVolume(name, config.Driver)
 		if err != nil {
 			return err
 		}
@@ -933,7 +932,6 @@ func NewDaemon(config *Config, registryService *registry.Service) (daemon *Daemo
 	d.defaultLogConfig = config.LogConfig
 	d.RegistryService = registryService
 	d.EventsService = eventsService
-	d.volumeDriver = volumesDriver
 
 	if err := d.restore(); err != nil {
 		return nil, err
@@ -945,6 +943,33 @@ func NewDaemon(config *Config, registryService *registry.Service) (daemon *Daemo
 	}
 
 	return d, nil
+}
+
+func (d *Daemon) createVolume(name, driverName string) (volume.Volume, error) {
+	vd, err := d.getVolumeDriver(driverName)
+	if err != nil {
+		return nil, err
+	}
+	return vd.Create(name)
+}
+
+func (d *Daemon) removeVolume(v volume.Volume) error {
+	vd, err := d.getVolumeDriver(v.DriverName())
+	if err != nil {
+		return nil
+	}
+	return vd.Remove(v)
+}
+
+func (d *Daemon) getVolumeDriver(name string) (volume.Driver, error) {
+	if name == "" {
+		name = "local"
+	}
+	vd := volume.Drivers.Lookup(name)
+	if vd == nil {
+		return nil, fmt.Errorf("Volumes Driver %s isn't registered", name)
+	}
+	return vd, nil
 }
 
 func (daemon *Daemon) Shutdown() error {
@@ -1303,7 +1328,7 @@ func (container *Container) containsBind(dest string) bool {
 func (container *Container) addVolumesFrom(c *Container, mode string) ([]*vv, error) {
 	var volumes []*vv
 	for name, config := range c.VolumeConfig {
-		lv, err := container.daemon.volumeDriver.Create(name)
+		lv, err := container.daemon.createVolume(name, config.Driver)
 		if err != nil {
 			return nil, err
 		}
