@@ -17,7 +17,7 @@ const (
 )
 
 func NewClient(addr string) *Client {
-	// FIXME: TLS? :scream:
+	// No TLS. Hopefully this discourages non-local plugins
 	tr := &http.Transport{}
 	protoAndAddr := strings.Split(addr, "://")
 	utils.ConfigureTCPTransport(tr, protoAndAddr[0], protoAndAddr[1])

@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	activePlugins = &plugins{plugins: make(map[string]*Plugin)}
+	activePlugins    = &plugins{plugins: make(map[string]*Plugin)}
+	extpointHandlers = make(map[string]func(string, *Client))
 )
 
 type plugins struct {
@@ -43,12 +44,12 @@ func (p *Plugin) Activate() error {
 	}
 	p.Manifest = m
 
-	// TODO: make this less hardcoded-in-obscure-function
 	for _, iface := range m.Implements {
-		switch iface {
-		case "VolumeDriver":
-			// todo
+		handler, handled := extpointHandlers[iface]
+		if !handled {
+			continue
 		}
+		handler(p.Name, p.Client)
 	}
 
 	activePlugins.plugins[p.Name] = p
@@ -99,4 +100,8 @@ func Active() []*Plugin {
 		plugins = append(plugins, plugin)
 	}
 	return plugins
+}
+
+func Handle(iface string, fn func(string, *Client)) {
+	extpointHandlers[iface] = fn
 }
