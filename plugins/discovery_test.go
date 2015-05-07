@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -46,7 +47,15 @@ func TestLocalSocket(t *testing.T) {
 		t.Fatalf("Expected 1 plugin registered, got %d\n", len(plugins))
 	}
 
-	p := plugins[0].(*RemotePlugin)
+	p := plugins[0]
+
+	pp, err := r.Plugin("echo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(p, pp) {
+		t.Fatalf("Expected %v, was %v\n", p, pp)
+	}
 
 	if p.Name != "echo" {
 		t.Fatalf("Expected plugin `echo`, got %s\n", p.Name)
@@ -72,7 +81,7 @@ func TestFileSpecPlugin(t *testing.T) {
 	}{
 		{filepath.Join(tmpdir, "echo.spec"), "echo", "unix://var/lib/docker/plugins/echo.sock", false},
 		{filepath.Join(tmpdir, "foo.spec"), "foo", "tcp://localhost:8080", false},
-		{filepath.Join(tmpdir, "foo/foo.spec"), "foo", "tcp://localhost:8080", false},
+		//{filepath.Join(tmpdir, "foo/foo.spec"), "foo", "tcp://localhost:8080", false},
 		{filepath.Join(tmpdir, "bar.spec"), "bar", "localhost:8080", true}, // unknown transport
 	}
 
@@ -98,7 +107,15 @@ func TestFileSpecPlugin(t *testing.T) {
 			t.Fatalf("Expected 1 plugin registered, got %d\n", len(plugins))
 		}
 
-		p := plugins[0].(*RemotePlugin)
+		p := plugins[0]
+
+		pp, err := r.Plugin(p.Name)
+		if err != nil {
+			t.Fatal(err, p.Name)
+		}
+		if !reflect.DeepEqual(p, pp) {
+			t.Fatalf("Expected %v, was %v\n", p, pp)
+		}
 
 		if p.Name != c.name {
 			t.Fatalf("Expected plugin `%s`, got %s\n", c.name, p.Name)

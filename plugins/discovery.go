@@ -12,7 +12,8 @@ import (
 const defaultLocalRegistry = "/usr/share/docker/plugins"
 
 type Registry interface {
-	Plugins() ([]Plugin, error)
+	Plugins() ([]*Plugin, error)
+	Plugin(name string) (*Plugin, error)
 }
 
 type LocalRegistry struct {
@@ -27,8 +28,8 @@ func newLocalRegistry(path string) *LocalRegistry {
 	return &LocalRegistry{path}
 }
 
-func (l *LocalRegistry) Plugins() ([]Plugin, error) {
-	var plugins []Plugin
+func (l *LocalRegistry) Plugins() ([]*Plugin, error) {
+	var plugins []*Plugin
 
 	err := filepath.Walk(l.path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -48,11 +49,24 @@ func (l *LocalRegistry) Plugins() ([]Plugin, error) {
 	return plugins, err
 }
 
-func readPluginInfo(path string, fi os.FileInfo) (Plugin, error) {
+func (l *LocalRegistry) Plugin(name string) (*Plugin, error) {
+	filepath := filepath.Join(l.path, name)
+	specpath := filepath + ".spec"
+	if fi, err := os.Stat(specpath); err == nil {
+		return readPluginInfo(specpath, fi)
+	}
+	socketpath := filepath + ".sock"
+	if fi, err := os.Stat(socketpath); err == nil {
+		return readPluginInfo(socketpath, fi)
+	}
+	return nil, fmt.Errorf("Plugin not found")
+}
+
+func readPluginInfo(path string, fi os.FileInfo) (*Plugin, error) {
 	name := strings.Split(fi.Name(), ".")[0]
 
 	if fi.Mode()&os.ModeSocket != 0 {
-		return &RemotePlugin{
+		return &Plugin{
 			Name: name,
 			Addr: "unix://" + path,
 		}, nil
@@ -73,7 +87,7 @@ func readPluginInfo(path string, fi os.FileInfo) (Plugin, error) {
 		return nil, fmt.Errorf("Unknown protocol")
 	}
 
-	return &RemotePlugin{
+	return &Plugin{
 		Name: name,
 		Addr: addr,
 	}, nil
