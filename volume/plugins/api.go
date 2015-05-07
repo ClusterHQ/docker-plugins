@@ -16,6 +16,7 @@ func init() {
 type VolumeDriver interface {
 	Create(name string) (err error)
 	Remove(name string) (err error)
+	Path(name string) (mountpoint string, err error)
 	Mount(name string) (mountpoint string, err error)
 	Unmount(name string) (err error)
 }
