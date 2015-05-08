@@ -9,12 +9,17 @@ import (
 
 var (
 	activePlugins    = &plugins{plugins: make(map[string]*Plugin)}
-	extpointHandlers = make(map[string]func(string, *Client))
+	extpointHandlers = &handlers{handlers: make(map[string]func(string, *Client))}
 )
 
 type plugins struct {
 	sync.Mutex
 	plugins map[string]*Plugin
+}
+
+type handlers struct {
+	sync.Mutex
+	handlers map[string]func(string, *Client)
 }
 
 type Manifest struct {
@@ -44,8 +49,11 @@ func (p *Plugin) Activate() error {
 	}
 	p.Manifest = m
 
+	extpointHandlers.Lock()
+	defer extpointHandlers.Unlock()
+
 	for _, iface := range m.Implements {
-		handler, handled := extpointHandlers[iface]
+		handler, handled := extpointHandlers.handlers[iface]
 		if !handled {
 			continue
 		}
@@ -103,5 +111,7 @@ func Active() []*Plugin {
 }
 
 func Handle(iface string, fn func(string, *Client)) {
-	extpointHandlers[iface] = fn
+	extpointHandlers.Lock()
+	defer extpointHandlers.Unlock()
+	extpointHandlers.handlers[iface] = fn
 }
