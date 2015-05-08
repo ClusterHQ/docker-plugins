@@ -127,10 +127,6 @@ func mainDaemon() {
 		"graphdriver": d.GraphDriver().String(),
 	}).Info("Docker daemon")
 
-	if err := plugins.Load(); err != nil {
-		logrus.Error(err)
-	}
-
 	serverConfig := &apiserver.ServerConfig{
 		Logging:     true,
 		EnableCors:  daemonCfg.EnableCors,
@@ -198,6 +194,11 @@ func mainDaemon() {
 	// after the daemon is done setting up we can tell the api to start
 	// accepting connections with specified daemon
 	api.AcceptConnections(d)
+
+	// now load plugins, which may assume the API and daemon are running
+	if err := plugins.Load(); err != nil {
+		logrus.Error(err)
+	}
 
 	// Daemon is fully initialized and handling API traffic
 	// Wait for serve API to complete
