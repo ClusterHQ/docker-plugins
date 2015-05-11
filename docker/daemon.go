@@ -21,7 +21,6 @@ import (
 	"github.com/docker/docker/pkg/signal"
 	"github.com/docker/docker/pkg/system"
 	"github.com/docker/docker/pkg/timeutils"
-	"github.com/docker/docker/plugins"
 	"github.com/docker/docker/registry"
 )
 
@@ -102,31 +101,6 @@ func mainDaemon() {
 		}()
 	}
 
-	if err := migrateKey(); err != nil {
-		logrus.Fatal(err)
-	}
-	daemonCfg.TrustKeyPath = *flTrustKey
-
-	registryService := registry.NewService(registryCfg)
-	d, err := daemon.NewDaemon(daemonCfg, registryService)
-	if err != nil {
-		if pfile != nil {
-			if err := pfile.Remove(); err != nil {
-				logrus.Error(err)
-			}
-		}
-		logrus.Fatalf("Error starting daemon: %v", err)
-	}
-
-	logrus.Info("Daemon has completed initialization")
-
-	logrus.WithFields(logrus.Fields{
-		"version":     dockerversion.VERSION,
-		"commit":      dockerversion.GITCOMMIT,
-		"execdriver":  d.ExecutionDriver().Name(),
-		"graphdriver": d.GraphDriver().String(),
-	}).Info("Docker daemon")
-
 	serverConfig := &apiserver.ServerConfig{
 		Logging:     true,
 		EnableCors:  daemonCfg.EnableCors,
@@ -194,11 +168,6 @@ func mainDaemon() {
 	// after the daemon is done setting up we can tell the api to start
 	// accepting connections with specified daemon
 	api.AcceptConnections(d)
-
-	// now load plugins, which may assume the API and daemon are running
-	if err := plugins.Load(); err != nil {
-		logrus.Error(err)
-	}
 
 	// Daemon is fully initialized and handling API traffic
 	// Wait for serve API to complete

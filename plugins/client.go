@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/docker/docker/utils"
@@ -21,7 +20,7 @@ func NewClient(addr string) *Client {
 	tr := &http.Transport{}
 	protoAndAddr := strings.Split(addr, "://")
 	utils.ConfigureTCPTransport(tr, protoAndAddr[0], protoAndAddr[1])
-	return &Client{&http.Client{Transport: tr}, addr}
+	return &Client{&http.Client{Transport: tr}, protoAndAddr[1]}
 }
 
 type Client struct {
@@ -30,16 +29,15 @@ type Client struct {
 }
 
 func (c *Client) Call(serviceMethod string, args interface{}, ret interface{}) error {
-	u, _ := url.Parse(c.addr)
-	u.Path = serviceMethod
-
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(args); err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", u.String(), &buf)
+	req, err := http.NewRequest("POST", "/"+serviceMethod, &buf)
 	req.Header.Add("Accept", versionMimetype)
+	req.URL.Scheme = "http"
+	req.URL.Host = c.addr
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return err
@@ -49,7 +47,7 @@ func (c *Client) Call(serviceMethod string, args interface{}, ret interface{}) e
 		if err != nil {
 			return nil
 		}
-		return fmt.Errorf("Plugin Error: %v", remoteErr)
+		return fmt.Errorf("Plugin Error: %s", remoteErr)
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&ret); err != nil {

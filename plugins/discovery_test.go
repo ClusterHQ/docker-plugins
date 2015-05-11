@@ -19,8 +19,8 @@ func TestUnknownLocalPath(t *testing.T) {
 	defer os.RemoveAll(tmpdir)
 
 	l := newLocalRegistry(filepath.Join(tmpdir, "unknown"))
-	_, err = l.Plugins()
-	if err == nil || !os.IsNotExist(err) {
+	_, err = l.Plugin("foo")
+	if err == nil || err != ErrNotFound {
 		t.Fatalf("Expected error for unknown directory")
 	}
 }
@@ -38,16 +38,10 @@ func TestLocalSocket(t *testing.T) {
 	defer l.Close()
 
 	r := newLocalRegistry(tmpdir)
-	plugins, err := r.Plugins()
+	p, err := r.Plugin("echo")
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	if len(plugins) != 1 {
-		t.Fatalf("Expected 1 plugin registered, got %d\n", len(plugins))
-	}
-
-	p := plugins[0]
 
 	pp, err := r.Plugin("echo")
 	if err != nil {
@@ -94,27 +88,13 @@ func TestFileSpecPlugin(t *testing.T) {
 		}
 
 		r := newLocalRegistry(tmpdir)
-		plugins, err := r.Plugins()
+		p, err := r.Plugin(c.name)
 		if c.fail && err == nil {
 			continue
 		}
 
 		if err != nil {
 			t.Fatal(err)
-		}
-
-		if len(plugins) != 1 {
-			t.Fatalf("Expected 1 plugin registered, got %d\n", len(plugins))
-		}
-
-		p := plugins[0]
-
-		pp, err := r.Plugin(p.Name)
-		if err != nil {
-			t.Fatal(err, p.Name)
-		}
-		if !reflect.DeepEqual(p, pp) {
-			t.Fatalf("Expected %v, was %v\n", p, pp)
 		}
 
 		if p.Name != c.name {

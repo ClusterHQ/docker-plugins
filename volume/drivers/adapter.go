@@ -1,4 +1,4 @@
-package plugins
+package volumedrivers
 
 import "github.com/docker/docker/volume"
 

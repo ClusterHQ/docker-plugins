@@ -45,6 +45,7 @@ import (
 	"github.com/docker/docker/trust"
 	"github.com/docker/docker/utils"
 	"github.com/docker/docker/volume"
+	volumedrivers "github.com/docker/docker/volume/drivers"
 	"github.com/docker/docker/volume/local"
 
 	"github.com/go-fsnotify/fsnotify"
@@ -848,7 +849,7 @@ func NewDaemon(config *Config, registryService *registry.Service) (daemon *Daemo
 	if err != nil {
 		return nil, err
 	}
-	volume.Drivers.Register(volumesDriver, volumesDriver.Name())
+	volumedrivers.Register(volumesDriver, volumesDriver.Name())
 
 	trustKey, err := api.LoadOrCreateTrustKey(config.TrustKeyPath)
 	if err != nil {
@@ -968,7 +969,7 @@ func (d *Daemon) getVolumeDriver(name string) (volume.Driver, error) {
 	if name == "" {
 		name = "local"
 	}
-	vd := volume.Drivers.Lookup(name)
+	vd := volumedrivers.Lookup(name)
 	if vd == nil {
 		return nil, fmt.Errorf("Volumes Driver %s isn't registered", name)
 	}

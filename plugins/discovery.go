@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -10,6 +11,10 @@ import (
 )
 
 const defaultLocalRegistry = "/usr/share/docker/plugins"
+
+var (
+	ErrNotFound = errors.New("Plugin not found")
+)
 
 type Registry interface {
 	Plugins() ([]*Plugin, error)
@@ -28,27 +33,6 @@ func newLocalRegistry(path string) *LocalRegistry {
 	return &LocalRegistry{path}
 }
 
-func (l *LocalRegistry) Plugins() ([]*Plugin, error) {
-	var plugins []*Plugin
-
-	err := filepath.Walk(l.path, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
-			return nil
-		}
-
-		p, err := readPluginInfo(path, info)
-		if err == nil {
-			plugins = append(plugins, p)
-		}
-		return err
-	})
-
-	return plugins, err
-}
-
 func (l *LocalRegistry) Plugin(name string) (*Plugin, error) {
 	filepath := filepath.Join(l.path, name)
 	specpath := filepath + ".spec"
@@ -59,7 +43,7 @@ func (l *LocalRegistry) Plugin(name string) (*Plugin, error) {
 	if fi, err := os.Stat(socketpath); err == nil {
 		return readPluginInfo(socketpath, fi)
 	}
-	return nil, fmt.Errorf("Plugin not found")
+	return nil, ErrNotFound
 }
 
 func readPluginInfo(path string, fi os.FileInfo) (*Plugin, error) {
