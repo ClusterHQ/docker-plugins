@@ -104,15 +104,6 @@ func (daemon *Daemon) Create(config *runconfig.Config, hostConfig *runconfig.Hos
 	}
 	defer container.Unmount()
 
-	uniqueDestination := func(destination string) bool {
-		for _, volumeConfig := range container.VolumeConfig {
-			if volumeConfig.Destination == destination {
-				return false
-			}
-		}
-		return true
-	}
-
 	for spec := range config.Volumes {
 		var (
 			name, destination string
@@ -127,7 +118,7 @@ func (daemon *Daemon) Create(config *runconfig.Config, hostConfig *runconfig.Hos
 		}
 		// Skip volumes for which we already have something mounted on that
 		// destination because of a --volume-from.
-		if !uniqueDestination(destination) {
+		if _, mounted := container.MountPoints[destination]; mounted {
 			continue
 		}
 		path, err := container.GetResourcePath(destination)
@@ -149,11 +140,13 @@ func (daemon *Daemon) Create(config *runconfig.Config, hostConfig *runconfig.Hos
 			return nil, nil, err
 		}
 		copyExistingContents(rootfs, path)
-		container.volumes = append(container.volumes, v)
-		container.VolumeConfig[v.Name()] = &VolumeConfig{
+
+		container.MountPoints[destination] = &MountPoint{
+			Name:        v.Name(),
 			Driver:      v.DriverName(),
 			Destination: destination,
 			RW:          true,
+			Volume:      v,
 		}
 	}
 	if err := container.ToDisk(); err != nil {

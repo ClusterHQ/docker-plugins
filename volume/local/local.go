@@ -2,16 +2,13 @@ package local
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
 
 	"github.com/docker/docker/volume"
-)
-
-var (
-	ErrVolumeExists = errors.New("volume already exists under current name")
 )
 
 func New(rootDirectory string) (*Root, error) {
@@ -55,7 +52,7 @@ func (r *Root) Create(name string) (volume.Volume, error) {
 		path := filepath.Join(r.path, name)
 		if err := os.Mkdir(path, 0755); err != nil {
 			if os.IsExist(err) {
-				return nil, ErrVolumeExists
+				return nil, fmt.Errorf("volume already exists under %s", path)
 			}
 			return nil, err
 		}

@@ -43,7 +43,6 @@ import (
 	"github.com/docker/docker/pkg/ulimit"
 	"github.com/docker/docker/runconfig"
 	"github.com/docker/docker/utils"
-	"github.com/docker/docker/volume"
 )
 
 const DefaultPathEnv = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -60,18 +59,6 @@ type StreamConfig struct {
 	stderr    *broadcastwriter.BroadcastWriter
 	stdin     io.ReadCloser
 	stdinPipe io.WriteCloser
-}
-
-type BindMount struct {
-	Source      string
-	Destination string
-	RW          bool
-}
-
-type VolumeConfig struct {
-	Driver      string
-	Destination string
-	RW          bool
 }
 
 type Container struct {
@@ -98,8 +85,6 @@ type Container struct {
 	AppArmorProfile          string
 	RestartCount             int
 	UpdateDns                bool
-	VolumeConfig             map[string]*VolumeConfig
-	BindMounts               []*BindMount
 
 	command      *execdriver.Command
 	daemon       *Daemon
@@ -110,8 +95,8 @@ type Container struct {
 	// logDriver for closing
 	logDriver logger.Logger
 	logCopier *logger.Copier
-	// live volume objects
-	volumes []volume.Volume
+
+	MountPoints map[string]*MountPoint
 }
 
 func (container *Container) FromDisk() error {
@@ -476,10 +461,12 @@ func (container *Container) Start() (err error) {
 	if err := populateCommand(container, env); err != nil {
 		return err
 	}
+
 	mounts, err := container.setupMounts()
 	if err != nil {
 		return err
 	}
+
 	container.command.Mounts = mounts
 	return container.waitForStart()
 }
@@ -1640,28 +1627,19 @@ func (container *Container) monitorExec(execConfig *execConfig, callback execdri
 
 func (container *Container) setupMounts() ([]execdriver.Mount, error) {
 	var mounts []execdriver.Mount
-	for _, v := range container.volumes {
-		config, ok := container.VolumeConfig[v.Name()]
-		if !ok {
-			return nil, fmt.Errorf("volume configuration not found for %s", v.Name())
-		}
-		path, err := v.Mount()
+	for _, m := range container.MountPoints {
+		path, err := m.Setup()
 		if err != nil {
 			return nil, err
 		}
+
 		mounts = append(mounts, execdriver.Mount{
 			Source:      path,
-			Destination: config.Destination,
-			Writable:    config.RW,
+			Destination: m.Destination,
+			Writable:    m.RW,
 		})
 	}
-	for _, b := range container.BindMounts {
-		mounts = append(mounts, execdriver.Mount{
-			Source:      b.Source,
-			Destination: b.Destination,
-			Writable:    b.RW,
-		})
-	}
+
 	mounts = sortMounts(mounts)
 	return append(mounts, container.networkMounts()...), nil
 }
