@@ -41,7 +41,7 @@ func (c *Client) Call(serviceMethod string, args interface{}, ret interface{}) e
 	}
 
 	logrus.Warn("About to construct request object for POST with ", u.String())
-	req, err := http.NewRequest("POST", "http:///" + serviceMethod, &buf)
+	req, err := http.NewRequest("POST", "http://badgers/" + serviceMethod, &buf)
 	req.Header.Add("Accept", versionMimetype)
 	resp, err := c.http.Do(req)
 	if err != nil {
