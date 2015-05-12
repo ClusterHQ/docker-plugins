@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/docker/docker/utils"
-	"github.com/Sirupsen/logrus"
 )
 
 const (
@@ -21,7 +20,6 @@ func NewClient(addr string) *Client {
 	// No TLS. Hopefully this discourages non-local plugins
 	tr := &http.Transport{}
 	protoAndAddr := strings.Split(addr, "://")
-	logrus.Warn("Calling ConfigureTCPTransport with ", protoAndAddr[0], " ", protoAndAddr[1])
 	utils.ConfigureTCPTransport(tr, protoAndAddr[0], protoAndAddr[1])
 	return &Client{&http.Client{Transport: tr}, addr}
 }
@@ -40,7 +38,9 @@ func (c *Client) Call(serviceMethod string, args interface{}, ret interface{}) e
 		return err
 	}
 
-	logrus.Warn("About to construct request object for POST with ", u.String())
+	// net/http needs to be told "http", not "unix". Additionally, it needs
+	// *something* in the Host field but because we're providing our own
+	// transport it doesn't matter what it is.
 	req, err := http.NewRequest("POST", "http://badgers/" + serviceMethod, &buf)
 	req.Header.Add("Accept", versionMimetype)
 	resp, err := c.http.Do(req)
