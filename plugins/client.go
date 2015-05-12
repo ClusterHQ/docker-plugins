@@ -20,6 +20,7 @@ func NewClient(addr string) *Client {
 	// No TLS. Hopefully this discourages non-local plugins
 	tr := &http.Transport{}
 	protoAndAddr := strings.Split(addr, "://")
+	logrus.Warn("Calling ConfigureTCPTransport with", protoAndAddr[0], protoAndAddr[1])
 	utils.ConfigureTCPTransport(tr, protoAndAddr[0], protoAndAddr[1])
 	return &Client{&http.Client{Transport: tr}, addr}
 }
