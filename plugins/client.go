@@ -21,7 +21,7 @@ func NewClient(addr string) *Client {
 	// No TLS. Hopefully this discourages non-local plugins
 	tr := &http.Transport{}
 	protoAndAddr := strings.Split(addr, "://")
-	logrus.Warn("Calling ConfigureTCPTransport with", protoAndAddr[0], protoAndAddr[1])
+	logrus.Warn("Calling ConfigureTCPTransport with ", protoAndAddr[0], " ", protoAndAddr[1])
 	utils.ConfigureTCPTransport(tr, protoAndAddr[0], protoAndAddr[1])
 	return &Client{&http.Client{Transport: tr}, addr}
 }
@@ -40,7 +40,8 @@ func (c *Client) Call(serviceMethod string, args interface{}, ret interface{}) e
 		return err
 	}
 
-	req, err := http.NewRequest("POST", u.String(), &buf)
+	logrus.Warn("About to construct request object for POST with ", u.String())
+	req, err := http.NewRequest("POST", "http:///" + serviceMethod, &buf)
 	req.Header.Add("Accept", versionMimetype)
 	resp, err := c.http.Do(req)
 	if err != nil {

@@ -38,6 +38,7 @@ func (p *Plugin) Activate() error {
 
 	var m *Manifest
 	p.Client = NewClient(p.Addr)
+	logrus.Warn("done NewClient; calling Plugin.Activate on", p.Addr)
 	err := p.Client.Call("Plugin.Activate", nil, m)
 	if err != nil {
 		return err
