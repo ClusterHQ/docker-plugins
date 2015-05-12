@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/utils"
+	"github.com/Sirupsen/logrus"
 )
 
 const (
